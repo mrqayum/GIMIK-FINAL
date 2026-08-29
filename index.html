@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gimik Pelancaran Bulan Kebangsaan 2026</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('images.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .header {
+            text-align: center;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px 40px;
+            border-radius: 15px;
+            border: 2px solid #ffcc00;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #ffffff;
+        }
+
+        .flag-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        /* Bendera bermula samar-samar & kabur */
+        #jalurGemilang {
+            width: 500px;
+            max-width: 80vw;
+            opacity: 0.15;
+            filter: blur(15px);
+            transition: all 0.8s ease-in-out;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* Kesan Kibaran Apabila Jelas sepenuhnya */
+        .waving {
+            animation: wave 3s infinite ease-in-out;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(1deg); }
+        }
+
+        .status-box {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 30px;
+            border-radius: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #count {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #ffcc00;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            background-color: #e60000;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        button:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Sambutan Bulan Kebangsaan 2026</h1>
+        <h2>Tema: "Malaysia MADANI: Kesejahteraan Dinikmati"</h2>
+    </div>
+
+    <div class="flag-container">
+        <img id="jalurGemilang" src="bendera.png" alt="Jalur Gemilang">
+    </div>
+
+    <div class="status-box">
+        <p>Laungan "MERDEKA": <span id="count">0</span> / 7</p>
+        <button id="startBtn">Aktifkan Mikrofon Gimik</button>
+    </div>
+
+    <script>
+        let count = 0;
+        let isCoolingDown = false;
+        const flag = document.getElementById('jalurGemilang');
+        const countDisplay = document.getElementById('count');
+        const startBtn = document.getElementById('startBtn');
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const analyser = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                startBtn.innerText = "Mikrofon Aktif (Sedia untuk Laungan!)";
+                startBtn.style.backgroundColor = "#28a745";
+
+                function checkVolume() {
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        sum += dataArray[i];
+                    }
+                    let average = sum / dataArray.length;
+
+                    // Ambang bunyi kuat (Laungan VIP)
+                    if (average > 55 && !isCoolingDown && count < 7) {
+                        count++;
+                        countDisplay.innerText = count;
+                        
+                        // Kemaskini kejelasan bendera secara bertahap
+                        let newOpacity = 0.15 + (count * 0.12);
+                        let newBlur = 15 - (count * 2.1);
+                        
+                        flag.style.opacity = newOpacity;
+                        flag.style.filter = `blur(${Math.max(0, newBlur)}px)`;
+
+                        if (count === 7) {
+                            flag.style.opacity = "1";
+                            flag.style.filter = "blur(0px)";
+                            flag.classList.add('waving');
+                            startBtn.innerText = "Gimik Selesai! Merdeka!";
+                        }
+
+                        // Elak satu laungan dikira lebih daripada sekali secara tidak sengaja
+                        isCoolingDown = true;
+                        setTimeout(() => { isCoolingDown = false; }, 1200);
+                    }
+
+                    requestAnimationFrame(checkVolume);
+                }
+
+                checkVolume();
+            } catch (err) {
+                alert("Sila benarkan akses mikrofon untuk memulakan gimik.");
+            }
+        });
+    </script>
+</body>
+</html>
